@@ -13,6 +13,30 @@ router.get('/:jid', query('id').notEmpty(), requestValidator, sessionValidator, 
 
 router.get('/meta/:jid', query('id').notEmpty(), requestValidator, sessionValidator, controller.getGroupMetaData)
 
+router.get('/invite/:jid', query('id').notEmpty(), requestValidator, sessionValidator, controller.getGroupInvite)
+
+router.post(
+    '/updateProfile',
+    query('id').notEmpty(),
+    body('groupsToBeUpdated').notEmpty(),
+    body('groupToCopyFrom').notEmpty(),
+    body('description').notEmpty(),
+    requestValidator,
+    sessionValidator,
+    controller.updateProfilePics
+)
+
+router.post(
+    '/participantsUpdate',
+    query('id').notEmpty(),
+    body('jid').notEmpty(),
+    body('participants').notEmpty(),
+    body('action').notEmpty(),
+    requestValidator,
+    sessionValidator,
+    controller.participantsUpdate
+)
+
 router.post(
     '/send',
     query('id').notEmpty(),

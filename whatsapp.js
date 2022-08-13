@@ -18,6 +18,7 @@ const sessions = new Map()
 const retries = new Map()
 
 const sessionsDir = (sessionId = '') => {
+    //console.log("@@@__dir"+join(__dirname, 'sessions', sessionId ? sessionId : ''))
     return join(__dirname, 'sessions', sessionId ? sessionId : '')
 }
 
@@ -156,6 +157,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
  * @returns {(import('@adiwajshing/baileys').AnyWASocket|null)}
  */
 const getSession = (sessionId) => {
+    //console.log("@@@ session get"+JSON.stringify(sessions.get(sessionId)))
     return sessions.get(sessionId) ?? null
 }
 
