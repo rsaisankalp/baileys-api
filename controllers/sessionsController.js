@@ -19,6 +19,10 @@ const status = (req, res) => {
     response(res, 200, true, '', { status: state })
 }
 
+const reconnect = (req,res) => {
+
+}
+
 const add = (req, res) => {
     const { id, isLegacy } = req.body
 
