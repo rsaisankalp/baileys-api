@@ -46,8 +46,13 @@ const participantsUpdate = async (req, res) => {
     const session = getSession(res.locals.sessionId)
     const { jid, participants, action } = req.body
 
+    let _participants = []
+    for (const [_, participant] of participants.entries()) {
+        _participants.push(formatPhone(participant))
+    }
+
     try {
-        const data = await session.groupParticipantsUpdate(jid, participants, action)
+        const data = await session.groupParticipantsUpdate(jid, _participants, action)
 
         if (!data.id) {
             return response(res, 400, false, 'The group is not exists.')
