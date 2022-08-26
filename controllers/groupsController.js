@@ -54,10 +54,6 @@ const participantsUpdate = async (req, res) => {
     try {
         const data = await session.groupParticipantsUpdate(jid, _participants, action)
 
-        if (!data.id) {
-            return response(res, 400, false, 'The group is not exists.')
-        }
-
         response(res, 200, true, '', data)
     } catch {
         response(res, 500, false, 'Failed to get group metadata.')
