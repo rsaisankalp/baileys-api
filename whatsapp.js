@@ -2,14 +2,16 @@ import { rmSync, readdir } from 'fs'
 import { join } from 'path'
 import pino from 'pino'
 import makeWASocket, {
-    makeWALegacySocket,
+    //makeWALegacySocket,
     useMultiFileAuthState,
-    useSingleFileLegacyAuthState,
+    //useSingleFileLegacyAuthState,
     makeInMemoryStore,
     Browsers,
     DisconnectReason,
     delay,
 } from '@adiwajshing/baileys'
+//import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, makeInMemoryStore, MessageRetryMap, useMultiFileAuthState } from 'Baileys/src'
+//import MAIN_LOGGER from '../src/Utils/logger'
 import { toDataURL } from 'qrcode'
 import __dirname from './dirname.js'
 import response from './response.js'
@@ -53,7 +55,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     let state, saveState
 
     if (isLegacy) {
-        ;({ state, saveState } = useSingleFileLegacyAuthState(sessionsDir(sessionFile)))
+        ;({ state, saveState } = null)//useSingleFileLegacyAuthState(sessionsDir(sessionFile)))
     } else {
         ;({ state, saveCreds: saveState } = await useMultiFileAuthState(sessionsDir(sessionFile)))
     }
@@ -71,7 +73,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     /**
      * @type {import('@adiwajshing/baileys').AnyWASocket}
      */
-    const wa = isLegacy ? makeWALegacySocket(waConfig) : makeWASocket.default(waConfig)
+    const wa = isLegacy ? null : makeWASocket.default(waConfig)
 
     if (!isLegacy) {
         store.readFromFile(sessionsDir(`${sessionId}_store.json`))
