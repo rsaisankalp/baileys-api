@@ -2,12 +2,11 @@ import { rmSync, readdir } from 'fs'
 import { join } from 'path'
 import pino from 'pino'
 import makeWASocket, {
-    //makeWALegacySocket,
     useMultiFileAuthState,
-    //useSingleFileLegacyAuthState,
     makeInMemoryStore,
     Browsers,
     DisconnectReason,
+    fetchLatestBaileysVersion, makeCacheableSignalKeyStore, 
     delay,
 } from '@adiwajshing/baileys'
 //import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, makeInMemoryStore, MessageRetryMap, useMultiFileAuthState } from 'Baileys/src'
@@ -18,6 +17,7 @@ import response from './response.js'
 
 const sessions = new Map()
 const retries = new Map()
+const msgRetryCounterMap = { }
 
 const sessionsDir = (sessionId = '') => {
     //console.log("@@@__dir"+join(__dirname, 'sessions', sessionId ? sessionId : ''))
@@ -53,27 +53,49 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     const store = makeInMemoryStore({ logger })
 
     let state, saveState
-
-    if (isLegacy) {
-        ;({ state, saveState } = null)//useSingleFileLegacyAuthState(sessionsDir(sessionFile)))
-    } else {
-        ;({ state, saveCreds: saveState } = await useMultiFileAuthState(sessionsDir(sessionFile)))
-    }
-
+    
+    ;({ state, saveCreds: saveState } = await useMultiFileAuthState(sessionsDir(sessionFile)))
+    
     /**
      * @type {import('@adiwajshing/baileys').CommonSocketConfig}
      */
+    const { version, isLatest } = await fetchLatestBaileysVersion()
+    console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`)
+    // const waConfig = {
+    //     auth: state,
+    //     printQRInTerminal: true,
+    //     logger,
+    //     browser: Browsers.ubuntu('Chrome'),
+    // }
     const waConfig = {
-        auth: state,
-        printQRInTerminal: true,
-        logger,
-        browser: Browsers.ubuntu('Chrome'),
+        version,
+		logger,
+		printQRInTerminal: true,
+		auth: {
+			creds: state.creds,
+			/** caching makes the store faster to send/recv messages */
+			keys: makeCacheableSignalKeyStore(state.keys, logger),
+		},
+		msgRetryCounterMap,
+		generateHighQualityLinkPreview: true,
+		// implement to handle retries
+		getMessage: async key => {
+			if(store) {
+				const msg = await store.loadMessage(key.remoteJid, key.id)
+				return msg?.message || undefined
+			}
+
+			// only if store is present
+			return {
+				conversation: 'hello'
+			}
+		}
     }
 
     /**
      * @type {import('@adiwajshing/baileys').AnyWASocket}
      */
-    const wa = isLegacy ? null : makeWASocket.default(waConfig)
+    const wa = makeWASocket.default(waConfig)
 
     if (!isLegacy) {
         store.readFromFile(sessionsDir(`${sessionId}_store.json`))
