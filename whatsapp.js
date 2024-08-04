@@ -8,7 +8,7 @@ import makeWASocket, {
     DisconnectReason,
     fetchLatestBaileysVersion, makeCacheableSignalKeyStore, 
     delay,
-} from '@adiwajshing/baileys'
+} from '@whiskeysockets/baileys'
 //import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, makeInMemoryStore, MessageRetryMap, useMultiFileAuthState } from 'Baileys/src'
 //import MAIN_LOGGER from '../src/Utils/logger'
 import { toDataURL } from 'qrcode'
@@ -57,7 +57,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     ;({ state, saveCreds: saveState } = await useMultiFileAuthState(sessionsDir(sessionFile)))
     
     /**
-     * @type {import('@adiwajshing/baileys').CommonSocketConfig}
+     * @type {import('@whiskeysockets/baileys').CommonSocketConfig}
      */
     const { version, isLatest } = await fetchLatestBaileysVersion()
     console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`)
@@ -90,10 +90,13 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
 				conversation: 'hello'
 			}
 		}
+		//shouldIgnoreJid: jid => {
+        	//	return jid && jid.endsWith('@newsletter')
+    		//}
     }
 
     /**
-     * @type {import('@adiwajshing/baileys').AnyWASocket}
+     * @type {import('@whiskeysockets/baileys').AnyWASocket}
      */
     const wa = makeWASocket.default(waConfig)
 
@@ -178,7 +181,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
 }
 
 /**
- * @returns {(import('@adiwajshing/baileys').AnyWASocket|null)}
+ * @returns {(import('@whiskeysockets/baileys').AnyWASocket|null)}
  */
 const getSession = (sessionId) => {
     //console.log("@@@ session get"+JSON.stringify(sessions.get(sessionId)))
@@ -206,7 +209,7 @@ const getChatList = (sessionId, isGroup = false) => {
 }
 
 /**
- * @param {import('@adiwajshing/baileys').AnyWASocket} session
+ * @param {import('@whiskeysockets/baileys').AnyWASocket} session
  */
 const isExists = async (session, jid, isGroup = false) => {
     try {
@@ -231,7 +234,7 @@ const isExists = async (session, jid, isGroup = false) => {
 }
 
 /**
- * @param {import('@adiwajshing/baileys').AnyWASocket} session
+ * @param {import('@whiskeysockets/baileys').AnyWASocket} session
  */
 const sendMessage = async (session, receiver, message, delayMs = 1000) => {
     try {

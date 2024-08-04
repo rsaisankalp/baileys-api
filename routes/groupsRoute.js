@@ -15,6 +15,8 @@ router.get('/meta/:jid', query('id').notEmpty(), requestValidator, sessionValida
 
 router.get('/invite/:jid', query('id').notEmpty(), requestValidator, sessionValidator, controller.getGroupInvite)
 
+router.get('/tester', query('id').notEmpty(), requestValidator, sessionValidator, controller.testGroup)
+
 router.post(
     '/actionOnGroupAddRemovePromoteDemote',
     query('id').notEmpty(),

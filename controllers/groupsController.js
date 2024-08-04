@@ -2,14 +2,24 @@ import { getSession, getChatList, isExists, sendMessage, formatGroup, formatPhon
 import response from './../response.js'
 // Import {request} from "express";
 import request from 'request'
-import { delay } from '@adiwajshing/baileys'
+import { delay } from '@whiskeysockets/baileys'
 import __dirname from '../dirname.js'
 import {createWriteStream, unlinkSync, existsSync, readdir} from 'fs'
 import {join} from "path";
 
-const getList = (req, res) => {
-    return response(res, 200, true, '', getChatList(res.locals.sessionId, true))
+const getList = async (req, res) => {
+    const session = getSession(res.locals.sessionId)
+    let list = await session.groupFetchAllParticipating();
+    console.log("participants:",list);
+    return response(res, 200, true, '', list);
+    //return response(res, 200, true, '', getChatList(res.locals.sessionId, true))
 }
+
+const testGroup = async (req, res) => {
+    let list = await groupFetchAllParticipating();
+    console.log("participants:",list);
+    return response(res, 400, true, '', [1,2,3]);
+} 
 
 const getGroupMetaData = async (req, res) => {
     const session = getSession(res.locals.sessionId)
@@ -243,4 +253,4 @@ const send = async (req, res) => {
 
 
 
-export { getList, getGroupMetaData, getGroupInvite, send, updateProfilePics, participantsUpdate, createGroup, actionOnGroupAddRemovePromoteDemote, removeImagesInFolder }
+export { getList, getGroupMetaData, getGroupInvite, send, updateProfilePics, participantsUpdate, createGroup, actionOnGroupAddRemovePromoteDemote, removeImagesInFolder, testGroup }
