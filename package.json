@@ -22,6 +22,8 @@
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
     "@whiskeysockets/baileys": "^6.7.5",
+    "baileys": "^6.7.18",
+    "@rodrigogs/baileys-store": "^1.0.1",
     "cors": "^2.8.5",
     "dependencies": "^0.0.1",
     "dotenv": "^16.0.0",

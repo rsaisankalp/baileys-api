@@ -110,7 +110,7 @@ Currently there's no known issues. If you find any, please kindly open a new one
 -   The app only provide a very simple validation, you may want to implement your own.
 -   When sending message, your `message` property will not be validated, so make sure you sent the right data!
 -   There's no authentication, you may want to implement your own.
--   The **Beta Multi-Device** client use provided Baileys's `makeInMemoryStore` method which will store your data in memory and a json file, you may want to use a better data management.
+-   The **Beta Multi-Device** client now relies on [`@rodrigogs/baileys-store`](https://github.com/rodrigogs/baileys-store)'s `makeInMemoryStore` implementation which stores data in memory and can persist it to a JSON file.
 -   Automatically reading incoming messages is now disabled by default. Uncomment `whatsapp.js:91-105` to enable this behaviour.
 -   If you have problems when deploying on **CPanel** or any other similar hosting, transpiling your code into **CommonJS** should fix the problems.
 
