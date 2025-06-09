@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lists</title>
+</head>
+<body>
+<h2>Lists</h2>
+<p>Logged in as <%= user.email %></p>
+<ul>
+<% Object.keys(lists).forEach(function(name){ %>
+<li><%= name %> - <%= lists[name].join(', ') %></li>
+<% }); %>
+</ul>
+<form method="post" action="/lists/add">
+    <input type="text" name="name" placeholder="List Name" required>
+    <input type="text" name="groups" placeholder="Group IDs comma separated" required>
+    <button type="submit">Add List</button>
+</form>
+<p><a href="/logout">Logout</a></p>
+</body>
+</html>
