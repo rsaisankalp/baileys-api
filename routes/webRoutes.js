@@ -22,6 +22,7 @@ const writeJson = (file, data) => {
 router.get('/', (req, res) => {
     if (!req.session.user) return res.redirect('/login')
     if (req.session.user.admin) return res.redirect('/admin')
+    if (!req.session.phone) return res.redirect('/scan')
     res.redirect('/groups')
 })
 
@@ -74,6 +75,17 @@ const ensureAdmin = (req, res, next) => {
     next()
 }
 
+const ensurePhone = async (req, res, next) => {
+    if (!req.session.phone) return res.redirect('/scan')
+    // verify session status
+    try {
+        const resp = await fetch('https://wa.vaidicpujas.in/sessions/status/' + req.session.phone)
+        const json = await resp.json()
+        if (json.data && json.data.status === 'authenticated') return next()
+    } catch {}
+    return res.redirect('/scan')
+}
+
 router.get('/admin', ensureAdmin, (req, res) => {
     const data = readJson(allowedPath)
     res.render('admin', { user: req.session.user, allowed: data })
@@ -87,9 +99,11 @@ router.post('/admin/add-email', ensureAdmin, (req, res) => {
     res.redirect('/admin')
 })
 
-router.get('/groups', ensureAuth, async (req, res) => {
+router.get('/groups', ensureAuth, ensurePhone, async (req, res) => {
     try {
-        const resp = await fetch('http://localhost:' + (process.env.PORT || 80) + '/groups?id=default')
+        const resp = await fetch(
+            'http://localhost:' + (process.env.PORT || 80) + '/groups?id=' + req.session.phone
+        )
         const json = await resp.json()
         res.render('groups', { user: req.session.user, groups: json.data || {} })
     } catch {
@@ -98,11 +112,13 @@ router.get('/groups', ensureAuth, async (req, res) => {
 })
 
 router.get('/scan', ensureAuth, (req, res) => {
-    res.render('scan', { user: req.session.user, qr: null, phone: null, status: null })
+    const phone = req.session.phone || null
+    res.render('scan', { user: req.session.user, qr: null, phone, status: null })
 })
 
 router.post('/scan', ensureAuth, async (req, res) => {
     const phone = '91' + req.body.phone.replace(/\D/g, '')
+    req.session.phone = phone
     try {
         const resp = await fetch('https://wa.vaidicpujas.in/sessions/add', {
             method: 'POST',
@@ -118,40 +134,60 @@ router.post('/scan', ensureAuth, async (req, res) => {
 })
 
 router.get('/scan/status', ensureAuth, async (req, res) => {
-    const phone = req.query.phone
+    const phone = req.query.phone || req.session.phone
     try {
         const resp = await fetch('https://wa.vaidicpujas.in/sessions/status/' + phone)
         const json = await resp.json()
         const status = json.data ? json.data.status : 'unknown'
+        if (status === 'authenticated') req.session.phone = phone
         res.render('scan', { user: req.session.user, qr: null, phone, status })
     } catch {
         res.render('scan', { user: req.session.user, qr: null, phone, status: 'error' })
     }
 })
 
-router.get('/lists', ensureAuth, (req, res) => {
+router.get('/lists', ensureAuth, ensurePhone, (req, res) => {
     const all = readJson(listsPath)
     const lists = all[req.session.user.email] || {}
     res.render('lists', { user: req.session.user, lists })
 })
 
-router.post('/lists/add', ensureAuth, (req, res) => {
+router.post('/lists/add', ensureAuth, ensurePhone, (req, res) => {
     const data = readJson(listsPath)
     data[req.session.user.email] = data[req.session.user.email] || {}
-    data[req.session.user.email][req.body.name] = req.body.groups
-        .split(',')
-        .map((g) => g.trim())
+    let groups = req.body.groups
+    if (!Array.isArray(groups)) groups = String(groups).split(',')
+    data[req.session.user.email][req.body.name] = groups.map((g) => g.trim())
     writeJson(listsPath, data)
     res.redirect('/lists')
 })
 
-router.get('/schedules', ensureAuth, (req, res) => {
+router.post('/lists/send', ensureAuth, ensurePhone, async (req, res) => {
+    const { list, message } = req.body
+    const data = readJson(listsPath)
+    const groupIds = (data[req.session.user.email] || {})[list] || []
+    try {
+        for (const gid of groupIds) {
+            await fetch(
+                'http://localhost:' + (process.env.PORT || 80) + '/groups/send?id=' + req.session.phone,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ receiver: gid, message: { text: message } })
+                }
+            )
+        }
+    } catch {}
+    res.redirect('/lists')
+})
+
+router.get('/schedules', ensureAuth, ensurePhone, (req, res) => {
     const data = readJson(listsPath)
     const lists = data[req.session.user.email] || {}
     res.render('schedule', { user: req.session.user, lists, schedules })
 })
 
-router.post('/schedules/add', ensureAuth, (req, res) => {
+router.post('/schedules/add', ensureAuth, ensurePhone, (req, res) => {
     const { list, message, interval } = req.body
     schedules[list] = { message, interval }
     const data = readJson(listsPath)
@@ -159,7 +195,7 @@ router.post('/schedules/add', ensureAuth, (req, res) => {
     const sendLoop = async () => {
         try {
             for (const gid of groupIds) {
-                await fetch('http://localhost:' + (process.env.PORT || 80) + '/groups/send?id=default', {
+                await fetch('http://localhost:' + (process.env.PORT || 80) + '/groups/send?id=' + req.session.phone, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ receiver: gid, message: { text: message } })

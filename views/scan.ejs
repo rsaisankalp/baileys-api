@@ -18,6 +18,9 @@
     <button type="submit">Check Status</button>
 </form>
 <% } %>
+<% if (status === 'authenticated') { %>
+<p><a href="/groups">Proceed to Groups</a></p>
+<% } %>
 <p><a href="/logout">Logout</a></p>
 </body>
 </html>

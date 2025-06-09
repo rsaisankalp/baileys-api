@@ -6,9 +6,21 @@
 <body>
 <h2>Lists</h2>
 <p>Logged in as <%= user.email %></p>
+<p>
+    <a href="/groups">Groups</a> |
+    <a href="/schedules">Schedules</a> |
+    <a href="/logout">Logout</a>
+</p>
 <ul>
 <% Object.keys(lists).forEach(function(name){ %>
-<li><%= name %> - <%= lists[name].join(', ') %></li>
+<li>
+    <%= name %> - <%= lists[name].join(', ') %>
+    <form method="post" action="/lists/send" style="display:inline;">
+        <input type="hidden" name="list" value="<%= name %>">
+        <input type="text" name="message" placeholder="Message" required>
+        <button type="submit">Send</button>
+    </form>
+</li>
 <% }); %>
 </ul>
 <form method="post" action="/lists/add">
@@ -16,6 +28,5 @@
     <input type="text" name="groups" placeholder="Group IDs comma separated" required>
     <button type="submit">Add List</button>
 </form>
-<p><a href="/logout">Logout</a></p>
 </body>
 </html>

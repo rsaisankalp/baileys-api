@@ -6,6 +6,11 @@
 <body>
 <h2>Schedules</h2>
 <p>Logged in as <%= user.email %></p>
+<p>
+    <a href="/groups">Groups</a> |
+    <a href="/lists">Lists</a> |
+    <a href="/logout">Logout</a>
+</p>
 <ul>
 <% Object.keys(schedules).forEach(function(name){ %>
 <li><%= name %> - every <%= schedules[name].interval %>ms message: <%= schedules[name].message %></li>

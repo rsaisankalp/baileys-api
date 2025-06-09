@@ -6,11 +6,31 @@
 <body>
 <h2>Groups</h2>
 <p>Logged in as <%= user.email %></p>
-<ul>
-<% Object.values(groups).forEach(function(g){ %>
-<li><%= g.subject %></li>
-<% }); %>
-</ul>
-<p><a href="/logout">Logout</a></p>
+<p>
+    <a href="/lists">View Lists</a> |
+    <a href="/schedules">Schedules</a> |
+    <a href="/logout">Logout</a>
+</p>
+<input type="text" id="search" placeholder="Search groups">
+<form method="post" action="/lists/add">
+    <input type="text" name="name" placeholder="List Name" required>
+    <ul id="groupList">
+    <% Object.values(groups).forEach(function(g){ %>
+        <li data-subject="<%= g.subject %>">
+            <label><input type="checkbox" name="groups" value="<%= g.id %>"> <%= g.subject %></label>
+        </li>
+    <% }); %>
+    </ul>
+    <button type="submit">Save List</button>
+</form>
+<script>
+document.getElementById('search').addEventListener('input', function(){
+  var term = this.value.toLowerCase();
+  document.querySelectorAll('#groupList li').forEach(function(li){
+    var subj = li.getAttribute('data-subject').toLowerCase();
+    li.style.display = subj.indexOf(term) !== -1 ? '' : 'none';
+  });
+});
+</script>
 </body>
 </html>
