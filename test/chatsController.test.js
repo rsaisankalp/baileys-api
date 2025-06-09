@@ -6,7 +6,7 @@ const createResponse = () => {
     const res = {
         status: sinon.stub().returnsThis(),
         json: sinon.stub().returnsThis(),
-        locals: { sessionId: '1' }
+        locals: { sessionId: '1', userId: 'u1' }
     }
     return res
 }

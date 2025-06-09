@@ -30,13 +30,21 @@ RECONNECT_INTERVAL=5000
 # Message Send Concurrency
 SEND_CONCURRENCY=5
 
+# Google OAuth Credentials
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:8000/auth/google/callback
+SESSION_SECRET=some-secret
+
 # Messages are queued and processed asynchronously based on SEND_CONCURRENCY
 ```
 
 ## Usage
 
-1. You can start the app by executing `npm run start` or `node .`.
-2. Now the endpoint should be available according to your environment variable configurations. Default is at `http://localhost:8000`.
+1. Start the app using `npm run start` or `node .`.
+2. Visit `/auth/google` to authenticate using your Google account.
+3. Once logged in, all API requests are associated with your user and session data.
+4. The endpoint should be available at `http://localhost:8000` unless configured otherwise.
 
 Also check out the `examples` directory for the basic usage examples.
 

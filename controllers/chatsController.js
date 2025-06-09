@@ -3,11 +3,11 @@ import sendQueue from '../sendQueue.js'
 import response from './../response.js'
 
 const getList = (req, res) => {
-    return response(res, 200, true, '', getChatList(res.locals.sessionId))
+    return response(res, 200, true, '', getChatList(res.locals.sessionId, false, res.locals.userId))
 }
 
 const send = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     const receiver = formatPhone(req.body.receiver)
     const { message } = req.body
 
@@ -29,7 +29,7 @@ const send = async (req, res) => {
 }
 
 const sendBulk = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     const errors = []
     const tasks = []
 

@@ -23,7 +23,10 @@
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
     "@rodrigogs/baileys-store": "^1.0.1",
-    "@whiskeysockets/baileys": "^6.7.18",
+    "surrealdb.js": "^0.3.1",
+    "express-session": "^1.17.3",
+    "passport": "^0.6.0",
+    "passport-google-oauth20": "^2.0.0"
     "baileys": "^6.7.18",
     "cors": "^2.8.5",
     "dependencies": "^0.0.1",
