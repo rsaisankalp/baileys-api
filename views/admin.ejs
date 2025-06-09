@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+<h2>Admin Dashboard</h2>
+<p>Logged in as <%= user.email %></p>
+<h3>Allowed Emails</h3>
+<ul>
+<% allowed.forEach(function(e){ %>
+<li><%= e %></li>
+<% }); %>
+</ul>
+<form method="post" action="/admin/add-email">
+    <input type="email" name="email" placeholder="Email" required>
+    <button type="submit">Add</button>
+</form>
+<p><a href="/logout">Logout</a></p>
+</body>
+</html>

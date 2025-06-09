@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Schedules</title>
+</head>
+<body>
+<h2>Schedules</h2>
+<p>Logged in as <%= user.email %></p>
+<ul>
+<% Object.keys(schedules).forEach(function(name){ %>
+<li><%= name %> - every <%= schedules[name].interval %>ms message: <%= schedules[name].message %></li>
+<% }); %>
+</ul>
+<form method="post" action="/schedules/add">
+    <select name="list" required>
+    <% Object.keys(lists).forEach(function(name){ %>
+    <option value="<%= name %>"><%= name %></option>
+    <% }); %>
+    </select>
+    <input type="text" name="message" placeholder="Message" required>
+    <input type="number" name="interval" placeholder="Interval ms" required>
+    <button type="submit">Add Schedule</button>
+</form>
+<p><a href="/logout">Logout</a></p>
+</body>
+</html>

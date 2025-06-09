@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Groups</title>
+</head>
+<body>
+<h2>Groups</h2>
+<p>Logged in as <%= user.email %></p>
+<ul>
+<% Object.values(groups).forEach(function(g){ %>
+<li><%= g.subject %></li>
+<% }); %>
+</ul>
+<p><a href="/logout">Logout</a></p>
+</body>
+</html>
