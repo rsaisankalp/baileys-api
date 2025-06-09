@@ -8,7 +8,8 @@ const find = (req, res) => {
 const status = (req, res) => {
     const states = ['connecting', 'connected', 'disconnecting', 'disconnected']
 
-    const session = getSession(res.locals.sessionId)
+    const userId = req.user?.id || 'default'
+    const session = getSession(res.locals.sessionId, userId)
     let state = states[session.ws.readyState]
 
     state =
@@ -25,23 +26,25 @@ const reconnect = (req,res) => {
 
 const add = (req, res) => {
     const { id, isLegacy } = req.body
+    const userId = req.user?.id || 'default'
 
-    if (isSessionExists(id)) {
+    if (isSessionExists(id, userId)) {
         return response(res, 409, false, 'Session already exists, please use another id.')
     }
 
-    createSession(id, isLegacy === 'true', res)
+    createSession(id, isLegacy === 'true', res, userId)
 }
 
 const del = async (req, res) => {
     const { id } = req.params
-    const session = getSession(id)
+    const userId = req.user?.id || 'default'
+    const session = getSession(id, userId)
 
     try {
         await session.logout()
     } catch {
     } finally {
-        deleteSession(id, session.isLegacy)
+        deleteSession(id, session.isLegacy, userId)
     }
 
     response(res, 200, true, 'The session has been successfully deleted.')

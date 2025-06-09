@@ -1,12 +1,13 @@
 import { getSession, getChatList, isExists, sendMessage, formatPhone } from './../whatsapp.js'
+import sendQueue from '../sendQueue.js'
 import response from './../response.js'
 
 const getList = (req, res) => {
-    return response(res, 200, true, '', getChatList(res.locals.sessionId))
+    return response(res, 200, true, '', getChatList(res.locals.sessionId, false, res.locals.userId))
 }
 
 const send = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     const receiver = formatPhone(req.body.receiver)
     const { message } = req.body
 
@@ -17,17 +18,20 @@ const send = async (req, res) => {
             return response(res, 400, false, 'The receiver number is not exists.')
         }
 
-        await sendMessage(session, receiver, message, 0)
+        sendQueue
+            .add(() => sendMessage(session, receiver, message, 0))
+            .catch(() => {})
 
-        response(res, 200, true, 'The message has been successfully sent.')
+        response(res, 200, true, 'The message has been queued for sending.')
     } catch {
         response(res, 500, false, 'Failed to send the message.')
     }
 }
 
 const sendBulk = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     const errors = []
+    const tasks = []
 
     for (const [key, data] of req.body.entries()) {
         let { receiver, message, delay } = data
@@ -44,23 +48,31 @@ const sendBulk = async (req, res) => {
 
         receiver = formatPhone(receiver)
 
-        try {
-            const exists = await isExists(session, receiver)
+        tasks.push(
+            (async () => {
+                try {
+                    const exists = await isExists(session, receiver)
 
-            if (!exists) {
-                errors.push(key)
+                    if (!exists) {
+                        errors.push(key)
 
-                continue
-            }
+                        return
+                    }
 
-            await sendMessage(session, receiver, message, delay)
-        } catch {
-            errors.push(key)
-        }
+                    sendQueue
+                        .add(() => sendMessage(session, receiver, message, delay))
+                        .catch(() => errors.push(key))
+                } catch {
+                    errors.push(key)
+                }
+            })()
+        )
     }
 
+    await Promise.all(tasks)
+
     if (errors.length === 0) {
-        return response(res, 200, true, 'All messages has been successfully sent.')
+        return response(res, 200, true, 'All messages have been queued for sending.')
     }
 
     const isAllFailed = errors.length === req.body.length
@@ -69,7 +81,7 @@ const sendBulk = async (req, res) => {
         res,
         isAllFailed ? 500 : 200,
         !isAllFailed,
-        isAllFailed ? 'Failed to send all messages.' : 'Some messages has been successfully sent.',
+        isAllFailed ? 'Failed to queue all messages.' : 'Some messages have been queued.',
         { errors }
     )
 }

@@ -8,7 +8,7 @@ import {createWriteStream, unlinkSync, existsSync, readdir} from 'fs'
 import {join} from "path";
 
 const getList = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     let list = await session.groupFetchAllParticipating();
     console.log("participants:",list);
     return response(res, 200, true, '', list);
@@ -22,7 +22,7 @@ const testGroup = async (req, res) => {
 } 
 
 const getGroupMetaData = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     //console.log("@@@@ session"+JSON.stringify(session))
     const { jid } = req.params
 
@@ -40,7 +40,7 @@ const getGroupMetaData = async (req, res) => {
 }
 
 const getGroupInvite = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     const { jid } = req.params
 
     try {
@@ -53,7 +53,7 @@ const getGroupInvite = async (req, res) => {
 }
 
 const participantsUpdate = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     const { jid, participants, action } = req.body
 
     let _participants = []
@@ -71,7 +71,7 @@ const participantsUpdate = async (req, res) => {
 }
 
 const createGroup = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     let { groupName, participants, welcomeMessage, description, adminsList, allowOnlyAdmins, imageUrl } = req.body
     console.log("particpants", participants)
     let _participants = []
@@ -130,7 +130,7 @@ const createGroup = async (req, res) => {
 }
 
 const actionOnGroupAddRemovePromoteDemote = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     const {groupid, participantList, action} = req.body
 
     let _participantList = []
@@ -147,7 +147,7 @@ const actionOnGroupAddRemovePromoteDemote = async (req, res) => {
 }
 
 const updateProfilePics = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     const { groupToCopyFrom, groupsToBeUpdated, description, allowOnlyAdmins, imageUrlLink } = req.body
     if (!groupsToBeUpdated) {
         return response(
@@ -232,7 +232,7 @@ const removeImagesInFolder = async (req, res) => {
 }
 
 const send = async (req, res) => {
-    const session = getSession(res.locals.sessionId)
+    const session = getSession(res.locals.sessionId, res.locals.userId)
     const receiver = formatGroup(req.body.receiver)
     const { message } = req.body
 

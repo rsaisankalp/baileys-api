@@ -1,4 +1,4 @@
-import { rmSync, readdir } from 'fs'
+import { rmSync, readdir, mkdirSync } from 'fs'
 import { join } from 'path'
 import pino from 'pino'
 import makeWASocket, {
@@ -19,18 +19,20 @@ const sessions = new Map()
 const retries = new Map()
 const msgRetryCounterMap = { }
 
-const sessionsDir = (sessionId = '') => {
-    //console.log("@@@__dir"+join(__dirname, 'sessions', sessionId ? sessionId : ''))
-    return join(__dirname, 'sessions', sessionId ? sessionId : '')
+const sessionsDir = (sessionId = '', userId = 'default') => {
+    const dir = join(__dirname, 'sessions', userId, sessionId ? sessionId : '')
+    mkdirSync(dir, { recursive: true })
+    return dir
 }
 
-const isSessionExists = (sessionId) => {
-    return sessions.has(sessionId)
+const isSessionExists = (sessionId, userId = 'default') => {
+    return sessions.has(`${userId}:${sessionId}`)
 }
 
-const shouldReconnect = (sessionId) => {
+const shouldReconnect = (sessionId, userId = 'default') => {
+    const key = `${userId}:${sessionId}`
     let maxRetries = parseInt(process.env.MAX_RETRIES ?? 0)
-    let attempts = retries.get(sessionId) ?? 0
+    let attempts = retries.get(key) ?? 0
 
     maxRetries = maxRetries < 1 ? 1 : maxRetries
 
@@ -38,7 +40,7 @@ const shouldReconnect = (sessionId) => {
         ++attempts
 
         console.log('Reconnecting...', { attempts, sessionId })
-        retries.set(sessionId, attempts)
+        retries.set(key, attempts)
 
         return true
     }
@@ -46,15 +48,16 @@ const shouldReconnect = (sessionId) => {
     return false
 }
 
-const createSession = async (sessionId, isLegacy = false, res = null) => {
+const createSession = async (sessionId, isLegacy = false, res = null, userId = 'default') => {
     const sessionFile = (isLegacy ? 'legacy_' : 'md_') + sessionId + (isLegacy ? '.json' : '')
+    const key = `${userId}:${sessionId}`
 
     const logger = pino({ level: 'warn' })
     const store = makeInMemoryStore({ logger })
 
     let state, saveState
     
-    ;({ state, saveCreds: saveState } = await useMultiFileAuthState(sessionsDir(sessionFile)))
+    ;({ state, saveCreds: saveState } = await useMultiFileAuthState(sessionsDir(sessionFile, userId)))
     
     /**
      * @type {import('@whiskeysockets/baileys').CommonSocketConfig}
@@ -101,11 +104,11 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     const wa = makeWASocket.default(waConfig)
 
     if (!isLegacy) {
-        store.readFromFile(sessionsDir(`${sessionId}_store.json`))
+        store.readFromFile(sessionsDir(`${sessionId}_store.json`, userId))
         store.bind(wa.ev)
     }
 
-    sessions.set(sessionId, { ...wa, store, isLegacy })
+    sessions.set(key, { ...wa, store, isLegacy })
 
     wa.ev.on('creds.update', saveState)
 
@@ -137,21 +140,21 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
         const statusCode = lastDisconnect?.error?.output?.statusCode
 
         if (connection === 'open') {
-            retries.delete(sessionId)
+            retries.delete(key)
         }
 
         if (connection === 'close') {
-            if (statusCode === DisconnectReason.loggedOut || !shouldReconnect(sessionId)) {
+            if (statusCode === DisconnectReason.loggedOut || !shouldReconnect(sessionId, userId)) {
                 if (res && !res.headersSent) {
                     response(res, 500, false, 'Unable to create session.')
                 }
 
-                return deleteSession(sessionId, isLegacy)
+                return deleteSession(sessionId, isLegacy, userId)
             }
 
             setTimeout(
                 () => {
-                    createSession(sessionId, isLegacy, res)
+                    createSession(sessionId, isLegacy, res, userId)
                 },
                 statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
             )
@@ -174,7 +177,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                 await wa.logout()
             } catch {
             } finally {
-                deleteSession(sessionId, isLegacy)
+                deleteSession(sessionId, isLegacy, userId)
             }
         }
     })
@@ -183,27 +186,27 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
 /**
  * @returns {(import('@whiskeysockets/baileys').AnyWASocket|null)}
  */
-const getSession = (sessionId) => {
-    //console.log("@@@ session get"+JSON.stringify(sessions.get(sessionId)))
-    return sessions.get(sessionId) ?? null
+const getSession = (sessionId, userId = 'default') => {
+    return sessions.get(`${userId}:${sessionId}`) ?? null
 }
 
-const deleteSession = (sessionId, isLegacy = false) => {
+const deleteSession = (sessionId, isLegacy = false, userId = 'default') => {
     const sessionFile = (isLegacy ? 'legacy_' : 'md_') + sessionId + (isLegacy ? '.json' : '')
     const storeFile = `${sessionId}_store.json`
     const rmOptions = { force: true, recursive: true }
 
-    rmSync(sessionsDir(sessionFile), rmOptions)
-    rmSync(sessionsDir(storeFile), rmOptions)
+    rmSync(sessionsDir(sessionFile, userId), rmOptions)
+    rmSync(sessionsDir(storeFile, userId), rmOptions)
 
-    sessions.delete(sessionId)
-    retries.delete(sessionId)
+    const key = `${userId}:${sessionId}`
+    sessions.delete(key)
+    retries.delete(key)
 }
 
-const getChatList = (sessionId, isGroup = false) => {
+const getChatList = (sessionId, isGroup = false, userId = 'default') => {
     const filter = isGroup ? '@g.us' : '@s.whatsapp.net'
 
-    return getSession(sessionId).store.chats.filter((chat) => {
+    return getSession(sessionId, userId).store.chats.filter((chat) => {
         return chat.id.endsWith(filter)
     })
 }
@@ -236,9 +239,19 @@ const isExists = async (session, jid, isGroup = false) => {
 /**
  * @param {import('@whiskeysockets/baileys').AnyWASocket} session
  */
-const sendMessage = async (session, receiver, message, delayMs = 1000) => {
+const sendMessage = async (session, receiver, message, delayMs = 0) => {
     try {
-        await delay(parseInt(delayMs))
+        await session.presenceSubscribe(receiver)
+        await delay(100)
+
+        await session.sendPresenceUpdate('composing', receiver)
+        await delay(300)
+
+        await session.sendPresenceUpdate('paused', receiver)
+
+        if (delayMs) {
+            await delay(parseInt(delayMs))
+        }
 
         return session.sendMessage(receiver, message)
     } catch {
@@ -269,29 +282,37 @@ const formatGroup = (group) => {
 const cleanup = () => {
     console.log('Running cleanup before exit.')
 
-    sessions.forEach((session, sessionId) => {
+    sessions.forEach((session, key) => {
+        const [userId, sessionId] = key.split(':')
         if (!session.isLegacy) {
-            session.store.writeToFile(sessionsDir(`${sessionId}_store.json`))
+            session.store.writeToFile(sessionsDir(`${sessionId}_store.json`, userId))
         }
     })
 }
 
 const init = () => {
-    readdir(sessionsDir(), (err, files) => {
+    readdir(join(__dirname, 'sessions'), (err, userDirs) => {
         if (err) {
             throw err
         }
-
-        for (const file of files) {
-            if ((!file.startsWith('md_') && !file.startsWith('legacy_')) || file.endsWith('_store')) {
+        for (const userId of userDirs) {
+            if (userId.startsWith('.')) {
                 continue
             }
+            readdir(sessionsDir('', userId), (err2, files) => {
+                if (err2) return
+                for (const file of files) {
+                    if ((!file.startsWith('md_') && !file.startsWith('legacy_')) || file.endsWith('_store')) {
+                        continue
+                    }
 
-            const filename = file.replace('.json', '')
-            const isLegacy = filename.split('_', 1)[0] !== 'md'
-            const sessionId = filename.substring(isLegacy ? 7 : 3)
+                    const filename = file.replace('.json', '')
+                    const isLegacy = filename.split('_', 1)[0] !== 'md'
+                    const sessionId = filename.substring(isLegacy ? 7 : 3)
 
-            createSession(sessionId, isLegacy)
+                    createSession(sessionId, isLegacy, null, userId)
+                }
+            })
         }
     })
 }

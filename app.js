@@ -4,6 +4,8 @@ import nodeCleanup from 'node-cleanup'
 import routes from './routes.js'
 import { init, cleanup } from './whatsapp.js'
 import cors from 'cors'
+import session from 'express-session'
+import passport from './auth.js'
 
 const app = express()
 
@@ -11,6 +13,13 @@ const host = process.env.HOST || undefined
 const port = parseInt(process.env.PORT ?? 80)
 console.log("@@@host and port"+host.toString()+" "+port.toString())
 app.use(cors())
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'secret',
+    resave: false,
+    saveUninitialized: false
+}))
+app.use(passport.initialize())
+app.use(passport.session())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use('/', routes)
