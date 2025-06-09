@@ -3,12 +3,12 @@ import { join } from 'path'
 import pino from 'pino'
 import makeWASocket, {
     useMultiFileAuthState,
-    makeInMemoryStore,
     Browsers,
     DisconnectReason,
-    fetchLatestBaileysVersion, makeCacheableSignalKeyStore, 
+    fetchLatestBaileysVersion, makeCacheableSignalKeyStore,
     delay,
 } from '@whiskeysockets/baileys'
+import { makeInMemoryStore } from '@rodrigogs/baileys-store'
 //import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, makeInMemoryStore, MessageRetryMap, useMultiFileAuthState } from 'Baileys/src'
 //import MAIN_LOGGER from '../src/Utils/logger'
 import { toDataURL } from 'qrcode'
