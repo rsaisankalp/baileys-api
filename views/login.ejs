@@ -5,6 +5,9 @@
 </head>
 <body>
 <h2>Login</h2>
+<% if (typeof unauthorized !== 'undefined' && unauthorized) { %>
+<p style="color:red;">Access denied</p>
+<% } %>
 <a href="/auth/google">Login with Google</a>
 </body>
 </html>

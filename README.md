@@ -31,12 +31,14 @@ RECONNECT_INTERVAL=5000
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_CALLBACK_URL=http://localhost:5000/auth/google/callback
+SESSION_SECRET=change-me
 ```
 
 ## Usage
 
 1. You can start the app by executing `npm run start` or `node .`.
 2. Now the endpoint should be available according to your environment variable configurations. Default is at `http://localhost:8000`.
+3. Visit the root URL in your browser to access the login page and web interface.
 
 Also check out the `examples` directory for the basic usage examples.
 

@@ -23,7 +23,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(
     session({
-        secret: 'secret',
+        secret: process.env.SESSION_SECRET || 'secret',
         resave: false,
         saveUninitialized: false,
     })

@@ -19,8 +19,15 @@ const writeJson = (file, data) => {
     fs.writeFileSync(file, JSON.stringify(data, null, 2))
 }
 
+router.get('/', (req, res) => {
+    if (!req.session.user) return res.redirect('/login')
+    if (req.session.user.admin) return res.redirect('/admin')
+    res.redirect('/groups')
+})
+
 router.get('/login', (req, res) => {
-    res.render('login')
+    const unauthorized = req.query.unauthorized === '1'
+    res.render('login', { unauthorized })
 })
 
 router.get(
@@ -45,7 +52,7 @@ router.get(
             return res.redirect('/groups')
         }
         req.logout(() => {})
-        res.redirect('/login')
+        res.redirect('/login?unauthorized=1')
     }
 )
 
