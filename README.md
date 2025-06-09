@@ -11,6 +11,7 @@ An implementation of [@adiwajshing/Baileys](https://github.com/adiwajshing/Baile
 1. Download or clone this repo.
 2. Enter to the project directory.
 3. Install the dependencies.
+4. Run `npm test` to run the test suite.
 
 ## `.env` Configurations
 
@@ -26,6 +27,8 @@ MAX_RETRIES=5
 
 # Reconnect Interval (in Milliseconds)
 RECONNECT_INTERVAL=5000
+# Message Send Concurrency
+SEND_CONCURRENCY=5
 ```
 
 ## Usage

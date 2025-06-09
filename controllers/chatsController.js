@@ -1,4 +1,5 @@
 import { getSession, getChatList, isExists, sendMessage, formatPhone } from './../whatsapp.js'
+import sendQueue from '../sendQueue.js'
 import response from './../response.js'
 
 const getList = (req, res) => {
@@ -17,7 +18,7 @@ const send = async (req, res) => {
             return response(res, 400, false, 'The receiver number is not exists.')
         }
 
-        await sendMessage(session, receiver, message, 0)
+        await sendQueue.add(() => sendMessage(session, receiver, message, 0))
 
         response(res, 200, true, 'The message has been successfully sent.')
     } catch {
@@ -28,6 +29,7 @@ const send = async (req, res) => {
 const sendBulk = async (req, res) => {
     const session = getSession(res.locals.sessionId)
     const errors = []
+    const tasks = []
 
     for (const [key, data] of req.body.entries()) {
         let { receiver, message, delay } = data
@@ -44,20 +46,26 @@ const sendBulk = async (req, res) => {
 
         receiver = formatPhone(receiver)
 
-        try {
-            const exists = await isExists(session, receiver)
+        tasks.push(
+            (async () => {
+                try {
+                    const exists = await isExists(session, receiver)
 
-            if (!exists) {
-                errors.push(key)
+                    if (!exists) {
+                        errors.push(key)
 
-                continue
-            }
+                        return
+                    }
 
-            await sendMessage(session, receiver, message, delay)
-        } catch {
-            errors.push(key)
-        }
+                    await sendQueue.add(() => sendMessage(session, receiver, message, delay))
+                } catch {
+                    errors.push(key)
+                }
+            })()
+        )
     }
+
+    await Promise.all(tasks)
 
     if (errors.length === 0) {
         return response(res, 200, true, 'All messages has been successfully sent.')
