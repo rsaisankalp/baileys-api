@@ -2,6 +2,7 @@ import { Router } from 'express'
 import fs from 'fs'
 import { join } from 'path'
 import fetch from 'node-fetch'
+import passport from 'passport'
 import __dirname from '../dirname.js'
 
 const router = Router()
@@ -19,26 +20,40 @@ const writeJson = (file, data) => {
 }
 
 router.get('/login', (req, res) => {
-    res.render('login', { error: null })
+    res.render('login')
 })
 
-router.post('/login', (req, res) => {
-    const { email, password } = req.body
-    const allowed = readJson(allowedPath).emails || []
-    if (email === 'admin@example.com' && password === 'admin') {
-        req.session.user = { email, admin: true }
-        return res.redirect('/admin')
+router.get(
+    '/auth/google',
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+)
+
+router.get(
+    '/auth/google/callback',
+    passport.authenticate('google', { failureRedirect: '/login' }),
+    (req, res) => {
+        const data = readJson(allowedPath)
+        const email = req.user.email
+        const admins = data.admins || []
+        const users = data.users || []
+        if (admins.includes(email)) {
+            req.session.user = { email, admin: true }
+            return res.redirect('/admin')
+        }
+        if (users.includes(email)) {
+            req.session.user = { email, admin: false }
+            return res.redirect('/groups')
+        }
+        req.logout(() => {})
+        res.redirect('/login')
     }
-    if (allowed.includes(email) && password === 'user') {
-        req.session.user = { email, admin: false }
-        return res.redirect('/groups')
-    }
-    res.render('login', { error: 'Invalid credentials' })
-})
+)
 
 router.get('/logout', (req, res) => {
-    req.session.destroy(() => {
-        res.redirect('/login')
+    req.logout(() => {
+        req.session.destroy(() => {
+            res.redirect('/login')
+        })
     })
 })
 
@@ -53,14 +68,14 @@ const ensureAdmin = (req, res, next) => {
 }
 
 router.get('/admin', ensureAdmin, (req, res) => {
-    const allowed = readJson(allowedPath).emails || []
-    res.render('admin', { user: req.session.user, allowed })
+    const data = readJson(allowedPath)
+    res.render('admin', { user: req.session.user, allowed: data })
 })
 
 router.post('/admin/add-email', ensureAdmin, (req, res) => {
     const data = readJson(allowedPath)
-    data.emails = data.emails || []
-    data.emails.push(req.body.email)
+    data.users = data.users || []
+    data.users.push(req.body.email)
     writeJson(allowedPath, data)
     res.redirect('/admin')
 })
@@ -75,27 +90,65 @@ router.get('/groups', ensureAuth, async (req, res) => {
     }
 })
 
+router.get('/scan', ensureAuth, (req, res) => {
+    res.render('scan', { user: req.session.user, qr: null, phone: null, status: null })
+})
+
+router.post('/scan', ensureAuth, async (req, res) => {
+    const phone = '91' + req.body.phone.replace(/\D/g, '')
+    try {
+        const resp = await fetch('https://wa.vaidicpujas.in/sessions/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ id: phone, isLegacy: 'false' })
+        })
+        const json = await resp.json()
+        const qr = json.data ? json.data.qr : null
+        res.render('scan', { user: req.session.user, qr, phone, status: 'pending' })
+    } catch {
+        res.render('scan', { user: req.session.user, qr: null, phone, status: 'error' })
+    }
+})
+
+router.get('/scan/status', ensureAuth, async (req, res) => {
+    const phone = req.query.phone
+    try {
+        const resp = await fetch('https://wa.vaidicpujas.in/sessions/status/' + phone)
+        const json = await resp.json()
+        const status = json.data ? json.data.status : 'unknown'
+        res.render('scan', { user: req.session.user, qr: null, phone, status })
+    } catch {
+        res.render('scan', { user: req.session.user, qr: null, phone, status: 'error' })
+    }
+})
+
 router.get('/lists', ensureAuth, (req, res) => {
-    const lists = readJson(listsPath)
+    const all = readJson(listsPath)
+    const lists = all[req.session.user.email] || {}
     res.render('lists', { user: req.session.user, lists })
 })
 
-router.post('/lists/add', ensureAdmin, (req, res) => {
-    const lists = readJson(listsPath)
-    lists[req.body.name] = req.body.groups.split(',').map(g => g.trim())
-    writeJson(listsPath, lists)
+router.post('/lists/add', ensureAuth, (req, res) => {
+    const data = readJson(listsPath)
+    data[req.session.user.email] = data[req.session.user.email] || {}
+    data[req.session.user.email][req.body.name] = req.body.groups
+        .split(',')
+        .map((g) => g.trim())
+    writeJson(listsPath, data)
     res.redirect('/lists')
 })
 
-router.get('/schedules', ensureAdmin, (req, res) => {
-    const lists = readJson(listsPath)
+router.get('/schedules', ensureAuth, (req, res) => {
+    const data = readJson(listsPath)
+    const lists = data[req.session.user.email] || {}
     res.render('schedule', { user: req.session.user, lists, schedules })
 })
 
-router.post('/schedules/add', ensureAdmin, (req, res) => {
+router.post('/schedules/add', ensureAuth, (req, res) => {
     const { list, message, interval } = req.body
     schedules[list] = { message, interval }
-    const groupIds = readJson(listsPath)[list] || []
+    const data = readJson(listsPath)
+    const groupIds = (data[req.session.user.email] || {})[list] || []
     const sendLoop = async () => {
         try {
             for (const gid of groupIds) {

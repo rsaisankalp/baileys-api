@@ -26,6 +26,11 @@ MAX_RETRIES=5
 
 # Reconnect Interval (in Milliseconds)
 RECONNECT_INTERVAL=5000
+
+# Google OAuth Credentials for the web UI
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=http://localhost:5000/auth/google/callback
 ```
 
 ## Usage

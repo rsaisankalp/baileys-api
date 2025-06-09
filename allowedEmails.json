@@ -1,1 +1,1 @@
-{"emails": ["admin@example.com"]}
+{"admins": ["admin@example.com"], "users": ["user@example.com"]}

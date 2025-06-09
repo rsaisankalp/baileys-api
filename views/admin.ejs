@@ -6,9 +6,15 @@
 <body>
 <h2>Admin Dashboard</h2>
 <p>Logged in as <%= user.email %></p>
-<h3>Allowed Emails</h3>
+<h3>Admins</h3>
 <ul>
-<% allowed.forEach(function(e){ %>
+<% (allowed.admins || []).forEach(function(e){ %>
+<li><%= e %></li>
+<% }); %>
+</ul>
+<h3>Users</h3>
+<ul>
+<% (allowed.users || []).forEach(function(e){ %>
 <li><%= e %></li>
 <% }); %>
 </ul>
