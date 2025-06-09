@@ -18,9 +18,11 @@ const send = async (req, res) => {
             return response(res, 400, false, 'The receiver number is not exists.')
         }
 
-        await sendQueue.add(() => sendMessage(session, receiver, message, 0))
+        sendQueue
+            .add(() => sendMessage(session, receiver, message, 0))
+            .catch(() => {})
 
-        response(res, 200, true, 'The message has been successfully sent.')
+        response(res, 200, true, 'The message has been queued for sending.')
     } catch {
         response(res, 500, false, 'Failed to send the message.')
     }
@@ -57,7 +59,9 @@ const sendBulk = async (req, res) => {
                         return
                     }
 
-                    await sendQueue.add(() => sendMessage(session, receiver, message, delay))
+                    sendQueue
+                        .add(() => sendMessage(session, receiver, message, delay))
+                        .catch(() => errors.push(key))
                 } catch {
                     errors.push(key)
                 }
@@ -68,7 +72,7 @@ const sendBulk = async (req, res) => {
     await Promise.all(tasks)
 
     if (errors.length === 0) {
-        return response(res, 200, true, 'All messages has been successfully sent.')
+        return response(res, 200, true, 'All messages have been queued for sending.')
     }
 
     const isAllFailed = errors.length === req.body.length
@@ -77,7 +81,7 @@ const sendBulk = async (req, res) => {
         res,
         isAllFailed ? 500 : 200,
         !isAllFailed,
-        isAllFailed ? 'Failed to send all messages.' : 'Some messages has been successfully sent.',
+        isAllFailed ? 'Failed to queue all messages.' : 'Some messages have been queued.',
         { errors }
     )
 }

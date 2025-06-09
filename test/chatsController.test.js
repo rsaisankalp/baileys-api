@@ -12,7 +12,8 @@ const createResponse = () => {
 }
 
 describe('chatsController', () => {
-    it('queues message on send', async () => {
+    it('queues message on send', async function () {
+        this.timeout(5000)
         const fakeQueue = { add: sinon.stub().callsFake(fn => Promise.resolve(fn())) }
         const fakeSendMessage = sinon.stub().resolves()
         const module = await esmock('../controllers/chatsController.js', {

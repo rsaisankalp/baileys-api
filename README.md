@@ -29,6 +29,8 @@ MAX_RETRIES=5
 RECONNECT_INTERVAL=5000
 # Message Send Concurrency
 SEND_CONCURRENCY=5
+
+# Messages are queued and processed asynchronously based on SEND_CONCURRENCY
 ```
 
 ## Usage
