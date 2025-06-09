@@ -238,6 +238,14 @@ const isExists = async (session, jid, isGroup = false) => {
  */
 const sendMessage = async (session, receiver, message, delayMs = 1000) => {
     try {
+        await session.presenceSubscribe(receiver)
+        await delay(500)
+
+        await session.sendPresenceUpdate('composing', receiver)
+        await delay(2000)
+
+        await session.sendPresenceUpdate('paused', receiver)
+
         await delay(parseInt(delayMs))
 
         return session.sendMessage(receiver, message)
