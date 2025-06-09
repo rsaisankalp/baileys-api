@@ -236,9 +236,19 @@ const isExists = async (session, jid, isGroup = false) => {
 /**
  * @param {import('@whiskeysockets/baileys').AnyWASocket} session
  */
-const sendMessage = async (session, receiver, message, delayMs = 1000) => {
+const sendMessage = async (session, receiver, message, delayMs = 0) => {
     try {
-        await delay(parseInt(delayMs))
+        await session.presenceSubscribe(receiver)
+        await delay(100)
+
+        await session.sendPresenceUpdate('composing', receiver)
+        await delay(300)
+
+        await session.sendPresenceUpdate('paused', receiver)
+
+        if (delayMs) {
+            await delay(parseInt(delayMs))
+        }
 
         return session.sendMessage(receiver, message)
     } catch {
