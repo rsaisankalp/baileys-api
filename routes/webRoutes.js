@@ -75,11 +75,13 @@ const ensureAdmin = (req, res, next) => {
     next()
 }
 
+const apiBase = 'http://localhost:' + (process.env.PORT || 80)
+
 const ensurePhone = async (req, res, next) => {
     if (!req.session.phone) return res.redirect('/scan')
     // verify session status
     try {
-        const resp = await fetch('https://wa.vaidicpujas.in/sessions/status/' + req.session.phone)
+        const resp = await fetch(apiBase + '/sessions/status/' + req.session.phone)
         const json = await resp.json()
         if (json.data && json.data.status === 'authenticated') return next()
     } catch {}
@@ -120,7 +122,7 @@ router.post('/scan', ensureAuth, async (req, res) => {
     const phone = '91' + req.body.phone.replace(/\D/g, '')
     req.session.phone = phone
     try {
-        const resp = await fetch('https://wa.vaidicpujas.in/sessions/add', {
+        const resp = await fetch(apiBase + '/sessions/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ id: phone, isLegacy: 'false' })
@@ -136,7 +138,7 @@ router.post('/scan', ensureAuth, async (req, res) => {
 router.get('/scan/status', ensureAuth, async (req, res) => {
     const phone = req.query.phone || req.session.phone
     try {
-        const resp = await fetch('https://wa.vaidicpujas.in/sessions/status/' + phone)
+        const resp = await fetch(apiBase + '/sessions/status/' + phone)
         const json = await resp.json()
         const status = json.data ? json.data.status : 'unknown'
         if (status === 'authenticated') req.session.phone = phone

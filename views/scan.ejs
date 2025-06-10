@@ -7,19 +7,22 @@
 <h2>Scan Phone</h2>
 <p>Logged in as <%= user.email %></p>
 <form method="post" action="/scan">
-    <input type="text" name="phone" placeholder="Phone" required>
+    <input type="text" name="phone" placeholder="Phone" value="<%= phone || '' %>" required>
     <button type="submit">Generate QR</button>
 </form>
 <% if (qr) { %>
 <img src="<%= qr %>" alt="QR Code" />
+<% } %>
+<% if (status) { %>
 <p>Status: <%= status %></p>
+<% if (status !== 'authenticated') { %>
 <form method="get" action="/scan/status">
     <input type="hidden" name="phone" value="<%= phone %>">
     <button type="submit">Check Status</button>
 </form>
-<% } %>
-<% if (status === 'authenticated') { %>
+<% } else { %>
 <p><a href="/groups">Proceed to Groups</a></p>
+<% } %>
 <% } %>
 <p><a href="/logout">Logout</a></p>
 </body>
