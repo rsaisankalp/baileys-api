@@ -37,7 +37,7 @@ SESSION_SECRET=change-me
 ## Usage
 
 1. You can start the app by executing `npm run start` or `node .`.
-2. Now the endpoint should be available according to your environment variable configurations. Default is at `http://localhost:8000`.
+2. Now the endpoint should be available according to your environment variable configurations. Default is at `http://localhost:8000`. All REST endpoints are prefixed with `/api`.
 3. Visit the root URL in your browser to access the login page and web interface.
    After logging in you will be asked to scan your WhatsApp number. Once the
    session is authenticated you can browse groups, create lists and schedule

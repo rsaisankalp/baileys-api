@@ -49,7 +49,7 @@ passport.deserializeUser((obj, done) => done(null, obj))
 app.use(passport.initialize())
 app.use(passport.session())
 app.use('/', webRoutes)
-app.use('/', routes)
+app.use('/api', routes)
 
 const listenerCallback = () => {
     init()

@@ -75,7 +75,7 @@ const ensureAdmin = (req, res, next) => {
     next()
 }
 
-const apiBase = 'http://localhost:' + (process.env.PORT || 80)
+const apiBase = 'http://localhost:' + (process.env.PORT || 80) + '/api'
 
 const ensurePhone = async (req, res, next) => {
     if (!req.session.phone) return res.redirect('/scan')
@@ -103,9 +103,7 @@ router.post('/admin/add-email', ensureAdmin, (req, res) => {
 
 router.get('/groups', ensureAuth, ensurePhone, async (req, res) => {
     try {
-        const resp = await fetch(
-            'http://localhost:' + (process.env.PORT || 80) + '/groups?id=' + req.session.phone
-        )
+        const resp = await fetch(apiBase + '/groups?id=' + req.session.phone)
         const json = await resp.json()
         res.render('groups', { user: req.session.user, groups: json.data || {} })
     } catch {
@@ -170,14 +168,11 @@ router.post('/lists/send', ensureAuth, ensurePhone, async (req, res) => {
     const groupIds = (data[req.session.user.email] || {})[list] || []
     try {
         for (const gid of groupIds) {
-            await fetch(
-                'http://localhost:' + (process.env.PORT || 80) + '/groups/send?id=' + req.session.phone,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ receiver: gid, message: { text: message } })
-                }
-            )
+            await fetch(apiBase + '/groups/send?id=' + req.session.phone, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ receiver: gid, message: { text: message } })
+            })
         }
     } catch {}
     res.redirect('/lists')
@@ -197,7 +192,7 @@ router.post('/schedules/add', ensureAuth, ensurePhone, (req, res) => {
     const sendLoop = async () => {
         try {
             for (const gid of groupIds) {
-                await fetch('http://localhost:' + (process.env.PORT || 80) + '/groups/send?id=' + req.session.phone, {
+                await fetch(apiBase + '/groups/send?id=' + req.session.phone, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ receiver: gid, message: { text: message } })
